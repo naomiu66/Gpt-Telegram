@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./Gpt-Telegram/.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: vv1976JR
+      POSTGRES_DB: Gpt-Telegram
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    image: ${DOCKER_REGISTRY-}gpt-telegram
+    container_name: api_container
+    build:
+      context: .
+      dockerfile: Gpt-Telegram/Dockerfile
+    ports:
+        - "5000:80"
+    depends_on:
+        - postgres
+    env_file:
+        - ./Gpt-Telegram/.env
+    environment:
+        ConnectionStrings__DefaultConnection: ${DEFAULT_CONNECTION}
+        RABBITMQ__HOST: rabbitmq
+        RABBITMQ__PORT: 5672
+        RABBITMQ__USERNAME: guest
+        RABBITMQ__PASSWORD: guest
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_container
+    ports: 
+        - "5672:5672"
+        - "15672:15672"
+    restart: unless-stopped
+
+volumes:
+  dbdata:
