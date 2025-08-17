@@ -8,7 +8,7 @@ namespace Gpt_Telegram.Data.Models.OpenAI
         public Guid SessionId { get; set; }
         public ChatMessageRole Role { get; set; }
         public string Content { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ChatSession? Session { get; set; }
     }

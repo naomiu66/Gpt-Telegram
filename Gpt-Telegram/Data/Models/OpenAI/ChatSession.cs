@@ -8,7 +8,7 @@ namespace Gpt_Telegram.Data.Models.OpenAI
         public required string Title { get; set; }
         public long UserId { get; set; }
         public string? SystemPrompt { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<ChatMessage>? ChatMessages { get; set; } = new List<ChatMessage>();
         public User? User { get; set; }

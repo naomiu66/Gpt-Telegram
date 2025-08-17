@@ -12,6 +12,10 @@ using Gpt_Telegram.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
 using Telegram.Bot;
+using StackExchange.Redis;
+using Gpt_Telegram.Data.Redis.Repositories;
+using Gpt_Telegram.Pipelines;
+using Gpt_Telegram.Pipelines.SessionCreation;
 
 Env.Load();
 
@@ -33,6 +37,12 @@ builder.Services.AddDbContext<ApplicationContext>(
         Console.WriteLine(builder.Configuration["DEFAULT_CONNECTION"]);
     });
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return ConnectionMultiplexer.Connect(config["Redis"]);
+});
+
 builder.Services.AddSingleton<ChatClient>(serviceProvider =>
 {
     var config = serviceProvider.GetService<IConfiguration>();
@@ -41,6 +51,18 @@ builder.Services.AddSingleton<ChatClient>(serviceProvider =>
 
     return new(model, apiKey);
 });
+
+// Pipelines
+
+//SessionCreation Pipeline
+builder.Services.AddScoped<StepHandler, SetTitleStepHandler>();
+builder.Services.AddScoped<StepHandler, SetSystemPromptStepHandler>();
+
+builder.Services.AddScoped<PipelineRouter>();
+
+// Repositories and Services
+
+builder.Services.AddScoped<IUserStateRepository, UserStateRepository>();
 
 builder.Services.AddScoped<IChatSessionsRepository, ChatSessionsRepository>();
 builder.Services.AddScoped<IChatSessionsService, ChatSessionsService>();
