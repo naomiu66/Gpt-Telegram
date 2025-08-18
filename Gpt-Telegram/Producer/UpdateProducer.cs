@@ -30,9 +30,12 @@ namespace Gpt_Telegram.Producer
                 Console.WriteLine($"[Error] Failed to connect RabbitMq : {ex.Message}");
             }
 
-            if (update.Message.Chat.Type != Telegram.Bot.Types.Enums.ChatType.Private)
+            if (update.Message != null)
             {
-                await _botClient.SendMessage(update.Message.Chat.Id, "Простите я работаю только в личных сообщениях.");
+                if (update.Message.Chat.Type != Telegram.Bot.Types.Enums.ChatType.Private)
+                {
+                    await _botClient.SendMessage(update.Message.Chat.Id, "Простите я работаю только в личных сообщениях.");
+                }
             }
 
             var connection = await _connection.GetConnectionAsync();

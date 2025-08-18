@@ -2,8 +2,10 @@
 using Gpt_Telegram.Data.Redis.Repositories;
 using Gpt_Telegram.Pipelines;
 using Gpt_Telegram.Services.Abstractions;
+using Gpt_Telegram.Utilities.Telegram;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Gpt_Telegram.Consumers.Handlers.Implementations
 {
@@ -12,20 +14,20 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
         private readonly ITelegramBotClient _botClient;
         private readonly IUsersService _usersService;
         private readonly IChatSessionsService _sessionsService;
-        private readonly PipelineRouter _pipelineRouter;
         private readonly IUserStateRepository _userStateRepository;
+        private readonly KeyboardMarkupBuilder _keyboardMarkupBuilder;
 
         public CommandHandler(ITelegramBotClient botClient,
             IUsersService usersService,
             IChatSessionsService sessionsService,
-            PipelineRouter pipelineRouter,
-            IUserStateRepository userStateRepository)
+            IUserStateRepository userStateRepository,
+            KeyboardMarkupBuilder keyboardMarkupBuilder)
         {
             _botClient = botClient;
             _usersService = usersService;
             _sessionsService = sessionsService;
-            _pipelineRouter = pipelineRouter;
             _userStateRepository = userStateRepository;
+            _keyboardMarkupBuilder = keyboardMarkupBuilder;
         }
 
         public async Task HandleAsync(Update update, CancellationToken cancellationToken)
@@ -47,7 +49,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                     await CancelCommand();
                     break;
                 case "/list":
-                    await ListCommand();
+                    await ListCommand(chatId, cancellationToken);
                     break;
                 case "/new":
                     await NewSessionCommand(chatId, cancellationToken);
@@ -58,9 +60,54 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             }
         }
 
-        private async Task ListCommand()
+        public async Task ListCommand(long chatId, CancellationToken cancellationToken, int page = 0)
         {
-            throw new NotImplementedException();
+            var sessions = await _sessionsService.GetUserSessionsAsync(chatId);
+            var user = await _usersService.GetByIdAsync(chatId);
+
+            if(sessions == null)
+            {
+                await _botClient.SendMessage(chatId, "У вас нет активных сессий. Пожалуйста, создайте новую сессию с помощью команды /new.", cancellationToken: cancellationToken);
+                return;
+            }
+
+            sessions = sessions
+                .OrderByDescending(s => s.Id == user.ActiveSessionId)
+                .ThenByDescending(s => s.CreatedAt)
+                .ToList();
+            List<InlineKeyboardButton> buttons = new();
+
+            var pages = ChunkBy(sessions, 5).ToList();
+            if (page >= pages.Count) page = pages.Count() - 1;
+
+            foreach (var session in pages[page])
+            {
+                var text = session.Id == user.ActiveSessionId
+                    ? $"{session.Title} (Активная)"
+                    : session.Title;
+
+                buttons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton(text, $"selectSession:{session.Id}"));
+            }
+
+            List<InlineKeyboardButton> paginationButtons = new();
+            if (page > 0)
+                paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("⬅️ Назад", $"sessions_page:{page - 1}"));
+
+            if (page < pages.Count - 1)
+                paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Вперед ➡️", $"sessions_page:{page + 1}"));
+            paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Выход", "cancel"));
+
+            var markup = _keyboardMarkupBuilder.InitializeKeyboardMarkup(
+                buttons.Concat(paginationButtons).ToList(),
+                buttonsPerRow: 1
+            );
+
+            await _botClient.SendMessage(
+                chatId,
+                $"Ваши сессии (страница {page + 1}/{pages.Count}):",
+                replyMarkup: markup,
+                cancellationToken: cancellationToken
+            );
         }
 
         private async Task NewSessionCommand(long chatId, CancellationToken cancellationToken)
@@ -94,9 +141,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
             if (user != null)
             {
-                await _botClient.SendMessage(chatId,
-                    "Снова привет)",
-                    cancellationToken: cancellationToken);
+                return;
             }
 
             user = new Data.Models.Telegram.User
@@ -113,7 +158,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             if (response) 
             {
                 await _botClient.SendMessage(chatId,
-                    "Привет! Я бот, который поможет тебе в работе с OpenAI.",
+                    "Привет! Я бот, который поможет тебе в работе с OpenAI. Для начала необходимо создать чат сессию.",
                     cancellationToken: cancellationToken);
                 await NewSessionCommand(chatId, cancellationToken);
             }
@@ -123,6 +168,14 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                     "Произошла ошибка при создании пользователя. Пожалуйста, попробуйте еще раз позже.",
                     cancellationToken: cancellationToken);
             }
+        }
+
+        private IEnumerable<List<T>> ChunkBy<T>(IEnumerable<T> source, int chunkSize)
+        {
+            return source
+                .Select((x, i) => new { Index = i, Value = x })
+                .GroupBy(x => x.Index / chunkSize)
+                .Select(g => g.Select(v => v.Value).ToList());
         }
     }
 }

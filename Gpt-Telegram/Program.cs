@@ -16,6 +16,8 @@ using StackExchange.Redis;
 using Gpt_Telegram.Data.Redis.Repositories;
 using Gpt_Telegram.Pipelines;
 using Gpt_Telegram.Pipelines.SessionCreation;
+using Gpt_Telegram.Utilities.Telegram;
+using Gpt_Telegram.Utilities.OpenAI;
 
 Env.Load();
 
@@ -34,7 +36,6 @@ builder.Services.AddDbContext<ApplicationContext>(
     options =>
     {
         options.UseNpgsql(builder.Configuration["DEFAULT_CONNECTION"]);
-        Console.WriteLine(builder.Configuration["DEFAULT_CONNECTION"]);
     });
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -80,9 +81,16 @@ builder.Services.AddSingleton<IUpdateProducer, UpdateProducer>();
 
 builder.Services.AddHostedService<PromptConsumer>();
 builder.Services.AddHostedService<CommandConsumer>();
+builder.Services.AddHostedService<CallbackConsumer>();
 
 builder.Services.AddScoped<ICommandHandler, CommandHandler>();
 builder.Services.AddScoped<IPromptHandler, PromptHandler>();
+builder.Services.AddScoped<ICallbackHandler, CallbackHandler>();
+
+// Register Utilities
+
+builder.Services.AddScoped<KeyboardMarkupBuilder>();
+builder.Services.AddScoped<ITokenOptimizer, TokenOptimizer>();
 
 builder.Services.AddSingleton<ITelegramBotClient>(sp =>
 {

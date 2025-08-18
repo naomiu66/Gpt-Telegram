@@ -125,6 +125,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                 }, cancellationToken);
 
                 await _botClient.SendMessage(userId, completion.Content[0].Text, cancellationToken: cancellationToken);
+                Console.WriteLine($"[PromptHandler] gpt-4o : {completion.Content[0].Text}");
             }
             else
             {

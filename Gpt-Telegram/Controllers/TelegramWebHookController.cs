@@ -33,7 +33,8 @@ namespace Gpt_Telegram.Controllers
                 }
                 else if (update.Type == UpdateType.CallbackQuery)
                 {
-                    //TODO
+                    await _updateProducer.Publish(update, "callbacks");
+                    Console.WriteLine($"[Telegram] CallbackQuery from {update.CallbackQuery.From.Username} : {update.CallbackQuery.Data}");
                 }
                 else
                     Console.WriteLine($"Unhandled update type: {update.Type}");
