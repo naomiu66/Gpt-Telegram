@@ -86,7 +86,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                     ? $"{session.Title} (Активная)"
                     : session.Title;
 
-                buttons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton(text, $"selectSession:{session.Id}"));
+                buttons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton(text, $"select_session:{session.Id}"));
             }
 
             List<InlineKeyboardButton> paginationButtons = new();
@@ -95,7 +95,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
             if (page < pages.Count - 1)
                 paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Вперед ➡️", $"sessions_page:{page + 1}"));
-            paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Выход", "cancel"));
+            paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Выход", "cancel:1"));
 
             var markup = _keyboardMarkupBuilder.InitializeKeyboardMarkup(
                 buttons.Concat(paginationButtons).ToList(),

@@ -33,10 +33,8 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
         public async Task HandleAsync(CallbackQuery callback, CancellationToken ct)
         {
-            if (callback.Data == null) return;
 
             var parts = callback.Data.Split(':');
-            if (parts.Length != 2) return;
 
             var type = parts[0];
             var value = parts[1];
@@ -61,13 +59,16 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
         private async Task CancelAsync(long chatId, int? messageId) 
         {
-            await _keyboardMarkupBuilder.RemoveKeybordMarkup(
-                _botClient, chatId, messageId.Value
+            Console.WriteLine($"Cancel callback received for chat {chatId}");
+            await _botClient.DeleteMessage(
+                chatId: chatId,
+                messageId: messageId.Value
             );
         }
 
         private async Task ChangePageAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken)
         {
+            Console.WriteLine($"Change page callback received for chat {chatId} with value {value}");
             if (int.TryParse(value, out int page))
             {
                 if (messageId.HasValue)
@@ -85,6 +86,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
         private async Task SelectSessionAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken) 
         {
+            Console.WriteLine($"Select session callback received for chat {chatId} with value {value}");
             if (Guid.TryParse(value, out Guid sessionId))
             {
                 var user = await _usersService.GetByIdAsync(chatId);
@@ -98,18 +100,31 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
                 user.ActiveSessionId = sessionId;
 
-                await _usersService.UpdateAsync(user, cancellationToken);
+                var response = await _usersService.UpdateAsync(user, cancellationToken);
+
+                if(!response) 
+                {
+                    await _botClient.SendMessage(
+                        chatId,
+                        "Произошла ошибка при обновлении активной сессии. Пожалуйста, попробуйте еще раз позже.",
+                        cancellationToken: cancellationToken
+                    );
+                    return;
+                }
+
+                var session = await _chatSessionsService.GetByIdAsync(sessionId, cancellationToken);
 
                 if (messageId != null)
                 {
-                    await _keyboardMarkupBuilder.RemoveKeybordMarkup(
-                        _botClient, chatId, messageId.Value
+                    await _botClient.DeleteMessage(
+                        chatId: chatId,
+                        messageId: messageId.Value
                     );
                 }
 
                 await _botClient.SendMessage(
                     chatId,
-                    $"✅ Активная сессия изменена на {sessionId}",
+                    $"✅ Активная сессия изменена на {session.Title}",
                     cancellationToken: cancellationToken
                 );
             }
