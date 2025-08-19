@@ -4,6 +4,7 @@ using Gpt_Telegram.Data.Redis.Repositories;
 using Gpt_Telegram.Pipelines;
 using Gpt_Telegram.Services.Abstractions;
 using Gpt_Telegram.Services.Implementations;
+using Gpt_Telegram.Utilities.Telegram;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using OpenAI.Chat;
 using System.Text.RegularExpressions;
@@ -22,6 +23,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
         private readonly IChatMessagesService _chatMessagesService;
         private readonly IUserStateRepository _userStateRepository;
         private readonly PipelineRouter _pipelineRouter;
+        private readonly ITelegramFormatter _telegramFormatter;
 
         public PromptHandler(ITelegramBotClient botClient,
             ChatClient chatClient,
@@ -29,7 +31,8 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             IChatSessionsService chatSessionsService,
             IChatMessagesService chatMessagesService,
             IUserStateRepository userStateRepository,
-            PipelineRouter pipelineRouter)
+            PipelineRouter pipelineRouter,
+            ITelegramFormatter telegramFormatter)
         {
             _botClient = botClient;
             _chatClient = chatClient;
@@ -38,6 +41,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             _chatMessagesService = chatMessagesService;
             _userStateRepository = userStateRepository;
             _pipelineRouter = pipelineRouter;
+            _telegramFormatter = telegramFormatter;
         }
 
         public async Task HandleAsync(Update update, CancellationToken cancellationToken)
@@ -124,7 +128,16 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                     SessionId = session.Id,
                 }, cancellationToken);
 
-                await _botClient.SendMessage(userId, completion.Content[0].Text, cancellationToken: cancellationToken);
+                var formattedMessage = _telegramFormatter.FormatMessage(completion.Content[0].Text);
+
+                foreach (var chunk in formattedMessage)
+                {
+                    await _botClient.SendMessage(
+                        userId,
+                        chunk,
+                        parseMode: ParseMode.Html,
+                        cancellationToken: cancellationToken);
+                }
                 Console.WriteLine($"[PromptHandler] gpt-4o : {completion.Content[0].Text}");
             }
             else

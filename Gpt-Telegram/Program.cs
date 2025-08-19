@@ -91,6 +91,7 @@ builder.Services.AddScoped<ICallbackHandler, CallbackHandler>();
 
 builder.Services.AddScoped<KeyboardMarkupBuilder>();
 builder.Services.AddScoped<ITokenOptimizer, TokenOptimizer>();
+builder.Services.AddSingleton<ITelegramFormatter, TelegramFormatter>();
 
 builder.Services.AddSingleton<ITelegramBotClient>(sp =>
 {
