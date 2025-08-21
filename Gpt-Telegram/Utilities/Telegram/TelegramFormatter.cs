@@ -132,35 +132,43 @@ namespace Gpt_Telegram.Utilities.Telegram
         {
             int listIndex = 0;
 
+            // Нумерованный список <ol>
             html = Regex.Replace(html,
                 @"<ol[^>]*>(.*?)<\/ol>",
                 m =>
                 {
                     listIndex = 0;
-                    return Regex.Replace(m.Groups[1].Value, @"<li[^>]*>(.*?)<\/li>", mm =>
+                    var replaced = Regex.Replace(m.Groups[1].Value, @"<li[^>]*>(.*?)<\/li>", mm =>
                     {
                         listIndex++;
                         var content = mm.Groups[1].Value.Trim();
                         return $"{listIndex}. {content}\n";
                     }, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                    return replaced; // <-- без обёртки в <ol> ... </ol>
                 },
                 RegexOptions.Singleline | RegexOptions.IgnoreCase
             );
 
+            // Маркированный список <ul>
             html = Regex.Replace(html,
                 @"<ul[^>]*>(.*?)<\/ul>",
                 m =>
                 {
-                    return Regex.Replace(m.Groups[1].Value, @"<li[^>]*>(.*?)<\/li>", mm =>
+                    var replaced = Regex.Replace(m.Groups[1].Value, @"<li[^>]*>(.*?)<\/li>", mm =>
                     {
                         var content = mm.Groups[1].Value.Trim();
                         return $"• {content}\n";
                     }, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                    return replaced; // <-- без <ul> ... </ul>
                 },
                 RegexOptions.Singleline | RegexOptions.IgnoreCase
             );
+
             return html;
         }
+
         private string ConvertParagraphs(string html)
         {
             html = Regex.Replace(html, @"<\/?p[^>]*>", "\n", RegexOptions.IgnoreCase);

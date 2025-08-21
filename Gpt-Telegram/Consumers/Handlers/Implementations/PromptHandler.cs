@@ -128,6 +128,11 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
                 foreach (var chunk in formattedMessage)
                 {
+                    Console.WriteLine($"[PromptHandler] gpt-4o[html] : {chunk}");
+                }
+
+                foreach (var chunk in formattedMessage)
+                {
                     await _botClient.SendMessage(
                         userId,
                         chunk,
