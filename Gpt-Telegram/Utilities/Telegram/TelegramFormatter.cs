@@ -1,7 +1,5 @@
 ﻿using Markdig;
-using Markdig.Syntax;
 using System.Text.RegularExpressions;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Gpt_Telegram.Utilities.Telegram
 {
@@ -92,7 +90,7 @@ namespace Gpt_Telegram.Utilities.Telegram
         }
 
 
-        private List<string> ExtractCodeBlocks(ref string html) 
+        private List<string> ExtractCodeBlocks(ref string html)
         {
             var codeBlocks = new List<string>();
 
@@ -120,7 +118,7 @@ namespace Gpt_Telegram.Utilities.Telegram
             );
             return codeBlocks;
         }
-        private string ConvertHeadings(string html) 
+        private string ConvertHeadings(string html)
         {
             html = Regex.Replace(
                 html,
@@ -130,7 +128,7 @@ namespace Gpt_Telegram.Utilities.Telegram
             );
             return html;
         }
-        private string ConvertLists(string html) 
+        private string ConvertLists(string html)
         {
             int listIndex = 0;
 
@@ -163,48 +161,48 @@ namespace Gpt_Telegram.Utilities.Telegram
             );
             return html;
         }
-        private string ConvertParagraphs(string html) 
+        private string ConvertParagraphs(string html)
         {
             html = Regex.Replace(html, @"<\/?p[^>]*>", "\n", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"<\/?blockquote[^>]*>", "\n", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"<br\s*\/?>", "\n", RegexOptions.IgnoreCase);
             return html;
         }
-        private string ConvertTextStyles(string html) 
+        private string ConvertTextStyles(string html)
         {
             html = Regex.Replace(html, @"<\/?strong>", m => m.Value[1] == '/' ? "</b>" : "<b>", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"<\/?em>", m => m.Value[1] == '/' ? "</i>" : "<i>", RegexOptions.IgnoreCase);
             return html;
         }
-        private string ConvertInlineCode(string html) 
+        private string ConvertInlineCode(string html)
         {
             html = Regex.Replace(html, @"<code[^>]*>(.*?)<\/code>", "<code>$1</code>",
                 RegexOptions.Singleline | RegexOptions.IgnoreCase);
             return html;
         }
-        private string ConvertLinks(string html) 
+        private string ConvertLinks(string html)
         {
             html = Regex.Replace(html, @"<a[^>]*href=""([^""]+)""[^>]*>(.*?)<\/a>", "<a href=\"$1\">$2</a>",
                 RegexOptions.Singleline | RegexOptions.IgnoreCase);
             return html;
         }
-        private string RemoveUnsupportedTags(string html) 
+        private string RemoveUnsupportedTags(string html)
         {
             html = Regex.Replace(html, @"<\/?(?!b|i|u|s|a|code|pre|blockquote)\w+[^>]*>", "",
                 RegexOptions.IgnoreCase);
             return html;
         }
-        private string FixListLineBreaks(string html) 
+        private string FixListLineBreaks(string html)
         {
             html = Regex.Replace(html, @"(\d+)\.\s*\n\s*", "$1. ");
             return html;
         }
-        private string NormalizeNewLines(string html) 
+        private string NormalizeNewLines(string html)
         {
             html = Regex.Replace(html, @"(\n\s*){3,}", "\n\n");
             return html;
         }
-        private string RestoreCodeBlocks(string html, List<string> blocks) 
+        private string RestoreCodeBlocks(string html, List<string> blocks)
         {
             // 10) Вернуть код-блоки на место
             html = Regex.Replace(html, @"\[\[CODE_BLOCK_(\d+)\]\]", m =>

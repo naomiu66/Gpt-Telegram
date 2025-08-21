@@ -7,5 +7,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Abstractions
         public Task HandleAsync(Update update, CancellationToken cancellationToken);
 
         public Task ListCommand(long chatId, CancellationToken cancellationToken, int page = 0);
+
+        public Task DeleteCommand(long chatId, CancellationToken cancellationToken, int page = 0);
     }
 }

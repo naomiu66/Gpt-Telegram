@@ -4,20 +4,20 @@ using Gpt_Telegram.Consumers.Handlers.Abstractions;
 using Gpt_Telegram.Consumers.Handlers.Implementations;
 using Gpt_Telegram.Data;
 using Gpt_Telegram.Data.Connections;
+using Gpt_Telegram.Data.Redis.Repositories;
 using Gpt_Telegram.Data.Repositories.Abstractions;
 using Gpt_Telegram.Data.Repositories.Implementations;
+using Gpt_Telegram.Pipelines;
+using Gpt_Telegram.Pipelines.SessionCreation;
 using Gpt_Telegram.Producer;
 using Gpt_Telegram.Services.Abstractions;
 using Gpt_Telegram.Services.Implementations;
+using Gpt_Telegram.Utilities.OpenAI;
+using Gpt_Telegram.Utilities.Telegram;
 using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
-using Telegram.Bot;
 using StackExchange.Redis;
-using Gpt_Telegram.Data.Redis.Repositories;
-using Gpt_Telegram.Pipelines;
-using Gpt_Telegram.Pipelines.SessionCreation;
-using Gpt_Telegram.Utilities.Telegram;
-using Gpt_Telegram.Utilities.OpenAI;
+using Telegram.Bot;
 
 Env.Load();
 

@@ -7,5 +7,6 @@ namespace Gpt_Telegram.Services.Abstractions
         public Task<bool> CreateAsync(ChatMessage message, CancellationToken ct = default);
         public Task<List<ChatMessage>> GetChatMessagesAsync(Guid sessionId, CancellationToken ct = default);
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+        public Task<List<ChatMessage>> GetLastMessagesAsync(Guid sessionId, CancellationToken ct = default, int limit = 10);
     }
 }

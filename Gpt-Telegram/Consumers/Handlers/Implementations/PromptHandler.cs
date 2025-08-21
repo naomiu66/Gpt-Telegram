@@ -1,13 +1,9 @@
 ﻿using Gpt_Telegram.Consumers.Handlers.Abstractions;
-using Gpt_Telegram.Data.Models.OpenAI;
 using Gpt_Telegram.Data.Redis.Repositories;
 using Gpt_Telegram.Pipelines;
 using Gpt_Telegram.Services.Abstractions;
-using Gpt_Telegram.Services.Implementations;
 using Gpt_Telegram.Utilities.Telegram;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using OpenAI.Chat;
-using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -51,7 +47,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
             var state = await _userStateRepository.GetStateAsync(userId);
 
-            if(state != null)
+            if (state != null)
             {
                 var context = new PipelineContext
                 {
@@ -77,11 +73,11 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
             if (session == null)
             {
-                await _botClient.SendMessage(userId, "У вас нет активной сессии. Пожалуйста, создайте новую сессию или выберите активную сессию из списка с помощью команды /list.", cancellationToken: cancellationToken);
+                await _botClient.SendMessage(userId, "У вас нет активной сессии. Пожалуйста, создайте новую сессию, с помощью команды /new, или выберите активную сессию из списка с помощью команды /list.", cancellationToken: cancellationToken);
                 return;
             }
 
-            List<Data.Models.OpenAI.ChatMessage> history = await _chatMessagesService.GetChatMessagesAsync(session.Id);
+            List<Data.Models.OpenAI.ChatMessage> history = await _chatMessagesService.GetLastMessagesAsync(session.Id, cancellationToken);
 
             List<OpenAI.Chat.ChatMessage> messages = history
                 .Select(m => m.Role switch

@@ -15,20 +15,20 @@ namespace Gpt_Telegram.Pipelines
 
         public async Task RouteAsync(PipelineContext context, CancellationToken ct)
         {
-            var handler = _steps.FirstOrDefault(s => 
-                s.PipelineName == context.PipelineName && 
+            var handler = _steps.FirstOrDefault(s =>
+                s.PipelineName == context.PipelineName &&
                 s.StepName == context.StepName);
 
-            if(handler == null)
+            if (handler == null)
                 throw new InvalidOperationException($"No handler found for pipeline {context.PipelineName} and step {context.StepName}");
 
             await handler.HandleAsync(context, ct);
 
-            if(handler.NextStepName != null)
+            if (handler.NextStepName != null)
             {
                 await _userStateRepository.UpdateStepAsync(
-                    context.UserId, 
-                    handler.PipelineName, 
+                    context.UserId,
+                    handler.PipelineName,
                     handler.NextStepName,
                     context.Data
                 );

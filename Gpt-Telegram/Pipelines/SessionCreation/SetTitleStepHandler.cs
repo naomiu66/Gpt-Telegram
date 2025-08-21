@@ -10,15 +10,15 @@ namespace Gpt_Telegram.Pipelines.SessionCreation
 
         public SetTitleStepHandler(ITelegramBotClient botClient,
             IChatSessionsService chatSessionsService)
-            : base("SessionCreation", "SetTitle", botClient) 
+            : base("SessionCreation", "SetTitle", botClient)
         {
             _chatSessionsService = chatSessionsService;
         }
-     
+
 
         public override async Task HandleAsync(PipelineContext context, CancellationToken cancellationToken)
         {
-            if(context.MessageText != null)
+            if (context.MessageText != null)
             {
                 var sessions = await _chatSessionsService.GetUserSessionsAsync(context.UserId, cancellationToken);
 

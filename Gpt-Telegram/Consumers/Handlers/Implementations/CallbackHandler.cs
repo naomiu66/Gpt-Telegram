@@ -1,9 +1,6 @@
-﻿using DotNetEnv;
-using Gpt_Telegram.Consumers.Handlers.Abstractions;
+﻿using Gpt_Telegram.Consumers.Handlers.Abstractions;
 using Gpt_Telegram.Services.Abstractions;
 using Gpt_Telegram.Utilities.Telegram;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -22,7 +19,8 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             IUsersService usersService,
             IChatSessionsService chatSessionsService,
             KeyboardMarkupBuilder keyboardMarkupBuilder,
-            ICommandHandler commandHandler)
+            ICommandHandler commandHandler
+        )
         {
             _botClient = botClient;
             _usersService = usersService;
@@ -47,7 +45,13 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                     await SelectSessionAsync(value, chatId, messageId, ct);
                     break;
                 case "sessions_page":
-                    await ChangePageAsync(value, chatId, messageId, ct);
+                    await ChangePageAsync(value, chatId, messageId, "list", ct);
+                    break;
+                case "delete_session":
+                    await DeleteSessionAsync(value, chatId, messageId, ct);
+                    break;
+                case "session_delete_page":
+                    await ChangePageAsync(value, chatId, messageId, "delete", ct);
                     break;
                 case "cancel":
                     await CancelAsync(chatId, messageId);
@@ -57,7 +61,39 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             }
         }
 
-        private async Task CancelAsync(long chatId, int? messageId) 
+        private async Task DeleteSessionAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"Delete session callback received for chat {chatId} with value {value}");
+            if (Guid.TryParse(value, out Guid sessionId))
+            {
+                var response = await _chatSessionsService.DeleteAsync(sessionId, cancellationToken);
+                if (!response)
+                {
+                    await _botClient.SendMessage(
+                        chatId,
+                        "Произошла ошибка при удалении сессии. Пожалуйста, попробуйте еще раз позже.",
+                        cancellationToken: cancellationToken
+                    );
+                    return;
+                }
+                if (messageId != null)
+                {
+                    await _botClient.DeleteMessage(
+                        chatId: chatId,
+                        messageId: messageId.Value,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                await _botClient.SendMessage(
+                    chatId,
+                    "✅ Сессия успешно удалена.",
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+
+        private async Task CancelAsync(long chatId, int? messageId)
         {
             Console.WriteLine($"Cancel callback received for chat {chatId}");
             await _botClient.DeleteMessage(
@@ -66,32 +102,34 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             );
         }
 
-        private async Task ChangePageAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken)
+        private async Task ChangePageAsync(string value, long chatId, int? messageId, string action, CancellationToken cancellationToken)
         {
             Console.WriteLine($"Change page callback received for chat {chatId} with value {value}");
             if (int.TryParse(value, out int page))
             {
                 if (messageId.HasValue)
                 {
-                    await _keyboardMarkupBuilder.RemoveKeybordMarkup(
-                        _botClient,
-                        chatId,
-                        messageId.Value
-                    );
+                    await _botClient.DeleteMessage(chatId,
+                        messageId.Value,
+                        cancellationToken: cancellationToken);
                 }
 
-                await _commandHandler.ListCommand(chatId, cancellationToken, page);
+                if (action == "list") await _commandHandler.ListCommand(chatId, cancellationToken, page);
+                else if (action == "delete")
+                {
+                    await _commandHandler.DeleteCommand(chatId, cancellationToken, page);
+                }
             }
         }
 
-        private async Task SelectSessionAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken) 
+        private async Task SelectSessionAsync(string value, long chatId, int? messageId, CancellationToken cancellationToken)
         {
             Console.WriteLine($"Select session callback received for chat {chatId} with value {value}");
             if (Guid.TryParse(value, out Guid sessionId))
             {
                 var user = await _usersService.GetByIdAsync(chatId);
 
-                if(sessionId == user.ActiveSessionId) 
+                if (sessionId == user.ActiveSessionId)
                 {
                     await _botClient.SendMessage(chatId,
                         "Данная сессия уже активная.",
@@ -102,7 +140,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
                 var response = await _usersService.UpdateAsync(user, cancellationToken);
 
-                if(!response) 
+                if (!response)
                 {
                     await _botClient.SendMessage(
                         chatId,

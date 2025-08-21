@@ -1,6 +1,5 @@
 ﻿using Gpt_Telegram.Consumers.Handlers.Abstractions;
 using Gpt_Telegram.Data.Redis.Repositories;
-using Gpt_Telegram.Pipelines;
 using Gpt_Telegram.Services.Abstractions;
 using Gpt_Telegram.Utilities.Telegram;
 using Telegram.Bot;
@@ -17,7 +16,8 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
         private readonly IUserStateRepository _userStateRepository;
         private readonly KeyboardMarkupBuilder _keyboardMarkupBuilder;
 
-        public CommandHandler(ITelegramBotClient botClient,
+        public CommandHandler(
+            ITelegramBotClient botClient,
             IUsersService usersService,
             IChatSessionsService sessionsService,
             IUserStateRepository userStateRepository,
@@ -45,19 +45,68 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
                 case "/help":
                     await HelpCommand(chatId, cancellationToken);
                     break;
-                case "/cancel":
-                    await CancelCommand();
-                    break;
                 case "/list":
                     await ListCommand(chatId, cancellationToken);
                     break;
                 case "/new":
                     await NewSessionCommand(chatId, cancellationToken);
                     break;
-
+                case "/delete":
+                    await DeleteCommand(chatId, cancellationToken);
+                    break;
                 default:
                     break;
             }
+        }
+
+        public async Task DeleteCommand(long chatId, CancellationToken cancellationToken, int page = 0)
+        {
+            var sessions = await _sessionsService.GetUserSessionsAsync(chatId);
+            var user = await _usersService.GetByIdAsync(chatId);
+
+            if (sessions == null)
+            {
+                await _botClient.SendMessage(chatId, "У вас нет сессий.", cancellationToken: cancellationToken);
+                return;
+            }
+
+            sessions = sessions
+                .OrderByDescending(s => s.Id == user.ActiveSessionId)
+                .ThenByDescending(s => s.CreatedAt)
+                .ToList();
+            List<InlineKeyboardButton> buttons = new();
+
+            var pages = ChunkBy(sessions, 5).ToList();
+            if (page >= pages.Count) page = pages.Count() - 1;
+
+            foreach (var session in pages[page])
+            {
+                var text = session.Id == user.ActiveSessionId
+                    ? $"{session.Title} (Активная)"
+                    : session.Title;
+
+                buttons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton(text, $"delete_session:{session.Id}"));
+            }
+
+            List<InlineKeyboardButton> paginationButtons = new();
+            if (page > 0)
+                paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("⬅️ Назад", $"session_delete_page:{page - 1}"));
+
+            if (page < pages.Count - 1)
+                paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Вперед ➡️", $"session_delete_page:{page + 1}"));
+            paginationButtons.Add(_keyboardMarkupBuilder.InitializeKeyboardButton("Выход", "cancel:1"));
+
+            var markup = _keyboardMarkupBuilder.InitializeKeyboardMarkup(
+                buttons.Concat(paginationButtons).ToList(),
+                buttonsPerRow: 1
+            );
+
+            await _botClient.SendMessage(
+                chatId,
+                $"Выберите сессию для удаления (страница {page + 1}/{pages.Count}):",
+                replyMarkup: markup,
+                cancellationToken: cancellationToken
+            );
         }
 
         public async Task ListCommand(long chatId, CancellationToken cancellationToken, int page = 0)
@@ -65,7 +114,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             var sessions = await _sessionsService.GetUserSessionsAsync(chatId);
             var user = await _usersService.GetByIdAsync(chatId);
 
-            if(sessions == null)
+            if (sessions == null)
             {
                 await _botClient.SendMessage(chatId, "У вас нет активных сессий. Пожалуйста, создайте новую сессию с помощью команды /new.", cancellationToken: cancellationToken);
                 return;
@@ -114,7 +163,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
         {
             var state = await _userStateRepository.GetStateAsync(chatId);
 
-            if(state == null)
+            if (state == null)
             {
                 await _userStateRepository.UpdateStepAsync(chatId, "SessionCreation", "SetTitle", new Dictionary<string, object>());
                 await _botClient.SendMessage(chatId, "Введите название для новой сессии.", cancellationToken: cancellationToken);
@@ -123,11 +172,6 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             {
                 await _botClient.SendMessage(chatId, "Вы уже создаете новую сессию", cancellationToken: cancellationToken);
             }
-        }
-
-        private async Task CancelCommand()
-        {
-            throw new NotImplementedException();
         }
 
         private async Task HelpCommand(long chatId, CancellationToken cancellationToken)
@@ -155,7 +199,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
 
             var response = await _usersService.CreateAsync(user, cancellationToken);
 
-            if (response) 
+            if (response)
             {
                 await _botClient.SendMessage(chatId,
                     "Привет! Я бот, который поможет тебе в работе с OpenAI. Для начала необходимо создать чат сессию.",

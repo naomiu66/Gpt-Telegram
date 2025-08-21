@@ -1,5 +1,4 @@
 ﻿using Gpt_Telegram.Data.Models.OpenAI;
-using Gpt_Telegram.Data.Models.Telegram;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,7 +24,7 @@ namespace Gpt_Telegram.Data.Configurations
 
             builder.HasOne(cm => cm.User)
                 .WithMany(cm => cm.Sessions)
-                .HasForeignKey(cm => cm.UserId) 
+                .HasForeignKey(cm => cm.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.ToTable("chat_sessions");

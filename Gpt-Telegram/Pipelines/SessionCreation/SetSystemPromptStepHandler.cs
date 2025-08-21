@@ -15,7 +15,7 @@ namespace Gpt_Telegram.Pipelines.SessionCreation
             IChatSessionsService chatSessionsService,
             IUsersService usersService,
             IChatMessagesService chatMessagesService)
-            : base("SessionCreation", "SetSystemPrompt", botClient) 
+            : base("SessionCreation", "SetSystemPrompt", botClient)
         {
             _chatSessionsService = chatSessionsService;
             _userService = usersService;

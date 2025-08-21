@@ -15,7 +15,7 @@ namespace Gpt_Telegram.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChatCompletion([FromBody] string message) 
+        public async Task<IActionResult> ChatCompletion([FromBody] string message)
         {
             ChatCompletion completion = await _chatClient.CompleteChatAsync(message);
 

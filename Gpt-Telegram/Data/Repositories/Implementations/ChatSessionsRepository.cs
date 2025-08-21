@@ -21,8 +21,10 @@ namespace Gpt_Telegram.Data.Repositories.Implementations
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            var session = await _context.ChatSessions.FindAsync(id);
-            if (session != null) return false;
+            var session = await _context.ChatSessions.FirstOrDefaultAsync(cs => cs.Id == id, ct);
+            if (session == null) return false;
+
+            _context.ChatSessions.Remove(session);
             return await _context.SaveChangesAsync(ct) > 0;
         }
 

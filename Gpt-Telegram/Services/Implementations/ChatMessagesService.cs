@@ -27,5 +27,10 @@ namespace Gpt_Telegram.Services.Implementations
         {
             return await _chatMessagesRepository.GetChatMessagesAsync(sessionId, ct);
         }
+
+        public async Task<List<ChatMessage>> GetLastMessagesAsync(Guid sessionId, CancellationToken ct = default, int limit = 10)
+        {
+            return await _chatMessagesRepository.GetLastMessagesAsync(sessionId, ct, limit);
+        }
     }
 }

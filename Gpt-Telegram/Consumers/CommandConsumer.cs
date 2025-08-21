@@ -1,12 +1,9 @@
 ﻿using Gpt_Telegram.Consumers.Handlers.Abstractions;
 using Gpt_Telegram.Data.Connections;
-using Gpt_Telegram.Services.Abstractions;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace Gpt_Telegram.Consumers
