@@ -116,18 +116,18 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-await using (var scope = app.Services.CreateAsyncScope())
-{
-    var bot = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    var webhookUrl = config["Telegram:WebhookUrl"];
+//await using (var scope = app.Services.CreateAsyncScope())
+//{
+//    var bot = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+//    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+//    var webhookUrl = config["Telegram:WebhookUrl"];
 
-    await bot.SetWebhook(webhookUrl);
+//    await bot.SetWebhook(webhookUrl);
 
-    var info = await bot.GetWebhookInfo();
+//    var info = await bot.GetWebhookInfo();
 
-    Console.WriteLine($"Webhook status: {info.Url} - last error: {info.LastErrorMessage}");
-}
+//    Console.WriteLine($"Webhook status: {info.Url} - last error: {info.LastErrorMessage}");
+//}
 
 await using (var scope = app.Services.CreateAsyncScope())
 {

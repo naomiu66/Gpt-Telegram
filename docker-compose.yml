@@ -1,9 +1,9 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:latest
     container_name: postgres_container
-    ports:
-      - "5432:5432"
     env_file:
       - ./Gpt-Telegram/.env
     environment:
@@ -13,6 +13,17 @@ services:
     volumes:
       - dbdata:/var/lib/postgresql/data
     restart: unless-stopped
+
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx_container
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - api
+  #   restart: unless-stopped
 
   api:
     image: ${DOCKER_REGISTRY-}gpt-telegram
@@ -44,8 +55,6 @@ services:
   redis:
     image: redis:7.4
     container_name: redis_container
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
     command: ["redis-server", "--appendonly", "yes"]

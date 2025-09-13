@@ -202,7 +202,7 @@ namespace Gpt_Telegram.Consumers.Handlers.Implementations
             if (response)
             {
                 await _botClient.SendMessage(chatId,
-                    "Привет! Я бот, который поможет тебе в работе с OpenAI. Для начала необходимо создать чат сессию.",
+                    "Привет! Я чат-бот с поддержкой gpt-5 от OpenAI. Для начала необходимо создать чат сессию.",
                     cancellationToken: cancellationToken);
                 await NewSessionCommand(chatId, cancellationToken);
             }
